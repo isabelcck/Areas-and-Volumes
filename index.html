@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Chapter 5: Areas and Volumes</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* SEN-Friendly Design: Clean fonts, high contrast, large touch targets */
+        :root {
+            --base-color: #ff6b6b;   /* Red for Bases */
+            --lat-color: #2ecc71;    /* Green for Lateral Faces */
+            --height-color: #4ecdc4; /* Blue for Height/Lines */
+            --bg-color: #f7f9fc;
+            --text-color: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden; /* Prevent scrolling on iPad */
+            touch-action: none;
+        }
+
+        /* Tabs Navigation */
+        .nav-bar {
+            display: flex;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 10px;
+            overflow-x: auto;
+            white-space: nowrap;
+            z-index: 100;
+            position: relative;
+        }
+
+        .tab-btn {
+            border: none;
+            background: none;
+            padding: 15px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #95a5a6;
+            cursor: pointer;
+            border-bottom: 4px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: var(--text-color);
+            border-bottom-color: var(--height-color);
+        }
+
+        /* Main Content Area */
+        .content-area {
+            height: calc(100vh - 80px);
+            position: relative;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .content-area.active {
+            display: flex;
+        }
+
+        /* Controls Panel */
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 10;
+            width: 80%;
+            justify-content: center;
+        }
+
+        button.action-btn {
+            background: var(--height-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        button.action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .legend {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            pointer-events: none; /* Let clicks pass through */
+        }
+        .dot { height: 12px; width: 12px; display: inline-block; border-radius: 50%; margin-right: 5px; }
+
+        /* SVG Styles for 2D */
+        svg {
+            touch-action: none; /* Important for drag */
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        
+        .draggable { cursor: grab; }
+        .draggable:active { cursor: grabbing; }
+
+    </style>
+</head>
+<body>
+
+    <div class="nav-bar">
+        <button class="tab-btn" onclick="switchTab('5.0')">5.0 Shapes</button>
+        <button class="tab-btn active" onclick="switchTab('5.1')">5.1 Area (Dissect)</button>
+        <button class="tab-btn" onclick="switchTab('5.2')">5.2 Prisms</button>
+        <button class="tab-btn" onclick="switchTab('5.4')">5.4 Nets & Surface</button>
+    </div>
+
+    <div id="tab-5.1" class="content-area active">
+        <div class="legend">
+            <div><span class="dot" style="background:var(--base-color)"></span>Base</div>
+            <div><span class="dot" style="background:var(--height-color)"></span>Height</div>
+        </div>
+
+        <svg id="svg-5.1" width="600" height="400" viewBox="0 0 600 400">
+            <defs>
+                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#eee" stroke-width="1"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+
+            <rect x="200" y="100" width="200" height="150" fill="#ff6b6b" opacity="0.5" stroke="#333" stroke-width="2"></rect>
+            
+            <path id="move-tri" class="draggable" d="M 200 100 L 120 250 L 200 250 Z" fill="#ff6b6b" stroke="#333" stroke-width="2" />
+
+            <path d="M 400 100 L 480 250 L 400 250 Z" fill="none" stroke="#ccc" stroke-dasharray="5,5" stroke-width="2" />
+            
+            <text x="250" y="300" font-size="20" fill="#333">Parallelogram</text>
+        </svg>
+
+        <div class="controls">
+            <button class="action-btn" onclick="resetPuzzle()"><i class="fas fa-undo"></i> Reset</button>
+            <button class="action-btn" onclick="autoSolvePuzzle()"><i class="fas fa-magic"></i> Auto Transform</button>
+            <p style="margin-left: 10px; font-size: 0.9rem;">Tip: Drag the triangle to the dashed area!</p>
+        </div>
+    </div>
+
+    <div id="tab-5.4" class="content-area">
+        <div class="legend">
+            <div><span class="dot" style="background:var(--base-color)"></span>Base (Top/Bottom)</div>
+            <div><span class="dot" style="background:var(--lat-color)"></span>Lateral Faces</div>
+        </div>
+        
+        <div id="canvas-container" style="width: 100%; height: 70%;"></div>
+
+        <div class="controls" style="flex-direction: column; align-items: stretch;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: bold;">Fold / Unfold</span>
+                <span id="slider-val">0%</span>
+            </div>
+            <input type="range" id="unfold-slider" min="0" max="1" step="0.01" value="0" style="width: 100%;">
+            <p style="text-align: center; font-size: 0.8rem; color: #666; margin-top: 5px;">Swipe to rotate the prism</p>
+        </div>
+    </div>
+
+    <div id="tab-5.0" class="content-area"><h1>5.0 Basic Shapes (Coming Soon)</h1></div>
+    <div id="tab-5.2" class="content-area"><h1>5.2 Prism Identification (Coming Soon)</h1></div>
+
+    <script>
+        // --- GLOBAL TABS LOGIC ---
+        function switchTab(id) {
+            // Hide all content
+            document.querySelectorAll('.content-area').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            // Show selected
+            document.getElementById('tab-' + id).classList.add('active');
+            event.target.classList.add('active');
+
+            // Resize 3D canvas if switching to 5.4 (Three.js needs this)
+            if(id === '5.4' && camera && renderer) {
+                const container = document.getElementById('canvas-container');
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+        }
+
+        // --- TAB 5.1: 2D PUZZLE LOGIC ---
+        const tri = document.getElementById('move-tri');
+        let isDragging = false;
+        let startX, startY;
+        let originalTransform = {x: 0, y: 0};
+        
+        // Touch/Mouse Events for Dragging
+        function startDrag(evt) {
+            isDragging = true;
+            const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+            startX = clientX;
+            // Get current transform
+            const transform = tri.getAttribute('transform');
+            // Parse existing translate if any, simplified for this demo
+        }
+
+        function drag(evt) {
+            if (!isDragging) return;
+            evt.preventDefault();
+            const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+            const dx = clientX - startX;
+            
+            // Limit movement roughly
+            tri.setAttribute('transform', `translate(${dx}, 0)`);
+        }
+
+        function endDrag(evt) {
+            isDragging = false;
+            // Snap logic (Simple version)
+            // If moved > 150px (roughly to the right spot), snap to end
+            // Note: Actual implementation would need parsing the current transform value
+        }
+
+        // Add listeners
+        tri.addEventListener('mousedown', startDrag);
+        tri.addEventListener('touchstart', startDrag);
+        window.addEventListener('mousemove', drag);
+        window.addEventListener('touchmove', drag);
+        window.addEventListener('mouseup', endDrag);
+        window.addEventListener('touchend', endDrag);
+
+        function autoSolvePuzzle() {
+            // Simple animation using CSS transition concept in JS
+            let pos = 0;
+            const id = setInterval(frame, 5);
+            function frame() {
+                if (pos >= 200) { // Move 200px to the right
+                    clearInterval(id);
+                    tri.setAttribute('transform', `translate(200, 0)`);
+                } else {
+                    pos+=2;
+                    tri.setAttribute('transform', `translate(${pos}, 0)`);
+                }
+            }
+        }
+
+        function resetPuzzle() {
+            tri.setAttribute('transform', `translate(0, 0)`);
+        }
+
+
+        // --- TAB 5.4: 3D PRISM LOGIC (Three.js) ---
+        let scene, camera, renderer, prismGroup;
+        let faces = {}; // Store references to faces to rotate them
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf7f9fc);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(5, 5, 5);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            // Controls
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            dirLight.position.set(5, 10, 7);
+            scene.add(dirLight);
+
+            createPrism();
+            animate();
+        }
+
+        function createPrism() {
+            // Colors
+            const baseMat = new THREE.MeshLambertMaterial({ color: 0xff6b6b, side: THREE.DoubleSide }); // Red
+            const latMat = new THREE.MeshLambertMaterial({ color: 0x2ecc71, side: THREE.DoubleSide });  // Green
+            
+            prismGroup = new THREE.Group();
+
+            // Dimensions
+            const w = 1, h = 2, d = 1; // Width, Height, Depth
+
+            // 1. Bottom Base (Fixed)
+            const bottomGeo = new THREE.PlaneGeometry(w, d);
+            const bottom = new THREE.Mesh(bottomGeo, baseMat);
+            bottom.rotation.x = -Math.PI / 2;
+            prismGroup.add(bottom);
+
+            // 2. Front Face
+            const frontGeo = new THREE.PlaneGeometry(w, h);
+            faces.front = new THREE.Mesh(frontGeo, latMat);
+            // Pivot point logic: move geometry up by h/2 so pivot is at bottom
+            frontGeo.translate(0, h/2, 0); 
+            faces.front.position.set(0, 0, d/2);
+            prismGroup.add(faces.front);
+
+            // 3. Back Face
+            const backGeo = new THREE.PlaneGeometry(w, h);
+            faces.back = new THREE.Mesh(backGeo, latMat);
+            backGeo.translate(0, h/2, 0);
+            faces.back.position.set(0, 0, -d/2);
+            faces.back.rotation.y = Math.PI; // Face outwards
+            prismGroup.add(faces.back);
+
+            // 4. Right Face
+            const rightGeo = new THREE.PlaneGeometry(d, h);
+            faces.right = new THREE.Mesh(rightGeo, latMat);
+            rightGeo.translate(0, h/2, 0);
+            faces.right.position.set(w/2, 0, 0);
+            faces.right.rotation.y = Math.PI / 2;
+            prismGroup.add(faces.right);
+
+            // 5. Left Face
+            const leftGeo = new THREE.PlaneGeometry(d, h);
+            faces.left = new THREE.Mesh(leftGeo, latMat);
+            leftGeo.translate(0, h/2, 0);
+            faces.left.position.set(-w/2, 0, 0);
+            faces.left.rotation.y = -Math.PI / 2;
+            prismGroup.add(faces.left);
+
+            // 6. Top Base (Attached to Back Face for unfolding)
+            const topGeo = new THREE.PlaneGeometry(w, d);
+            faces.top = new THREE.Mesh(topGeo, baseMat);
+            // Translate so pivot is at the "top" edge of the back face
+            // This is tricky. Let's parent the top face to the back face.
+            faces.top.position.set(0, h, 0); // At the top of the back face
+            faces.top.rotation.x = -Math.PI / 2; // Flat initially
+            
+            // For simpler animation structure, I will add Top to the Scene, but calculate its position manually in the render loop,
+            // OR simpler: Attach Top to Back mesh.
+            faces.back.add(faces.top);
+            // Reset position relative to Back Face
+            faces.top.position.set(0, h, 0); // Top of the back face geometry
+            faces.top.rotation.set(Math.PI/2, 0, 0); // Correct orientation relative to back face
+
+            scene.add(prismGroup);
+        }
+
+        // Slider Logic
+        document.getElementById('unfold-slider').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value); // 0 to 1
+            document.getElementById('slider-val').innerText = Math.round(val * 100) + "%";
+            
+            // Animate Nets
+            // Rotate side faces down by 90 degrees (PI/2)
+            const angle = val * (Math.PI / 2);
+
+            faces.front.rotation.x = angle;
+            faces.back.rotation.x = -angle; // Back rotates opposite visual direction
+            faces.right.rotation.z = -angle; // Side rotates out
+            faces.left.rotation.z = angle;
+
+            // The Top face is a child of Back. 
+            // When Back rotates -90, Top is sticking out. We need Top to rotate another -90 relative to Back.
+            faces.top.rotation.x = Math.PI/2 - angle; 
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        // Initialize 3D when page loads (or when tab is clicked, but we can init once)
+        init3D();
+
+    </script>
+</body>
+</html>
