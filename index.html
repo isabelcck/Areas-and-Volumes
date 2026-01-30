@@ -134,6 +134,42 @@
         <button class="tab-btn active" onclick="switchTab('5.1')">5.1 Area (Dissect)</button>
         <button class="tab-btn" onclick="switchTab('5.2')">5.2 Prisms</button>
         <button class="tab-btn" onclick="switchTab('5.4')">5.4 Nets & Surface</button>
+    <div id="tab-5.0" class="content-area">
+        <div class="controls" style="top: 10px; bottom: auto; padding: 5px; width: 90%; flex-wrap: wrap;">
+            <button class="action-btn" style="font-size: 0.8rem; padding: 8px;" onclick="drawShape('square')">Square</button>
+            <button class="action-btn" style="font-size: 0.8rem; padding: 8px;" onclick="drawShape('rect')">Rectangle</button>
+            <button class="action-btn" style="font-size: 0.8rem; padding: 8px;" onclick="drawShape('tri')">Triangle</button>
+            <button class="action-btn" style="font-size: 0.8rem; padding: 8px;" onclick="drawShape('para')">Parallelogram</button>
+            <button class="action-btn" style="font-size: 0.8rem; padding: 8px;" onclick="drawShape('trap')">Trapezium</button>
+        </div>
+
+        <svg id="svg-5.0" width="600" height="400" viewBox="0 0 600 400" style="margin-top: 60px;">
+            <defs>
+                <pattern id="grid50" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#eee" stroke-width="1"/>
+                </pattern>
+                <marker id="arrow" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+                    <path d="M0,0 L10,5 L0,10" fill="#4ecdc4" />
+                </marker>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid50)" />
+
+            <path id="shape-path" d="" fill="#ffeaa7" stroke="#333" stroke-width="2" />
+
+            <line id="base-line" x1="0" y1="0" x2="0" y2="0" stroke="#ff6b6b" stroke-width="5" stroke-linecap="round" />
+            
+            <line id="height-line" x1="0" y1="0" x2="0" y2="0" stroke="#4ecdc4" stroke-width="3" stroke-dasharray="5,5" />
+
+            <path id="right-angle" d="" fill="none" stroke="#333" stroke-width="2" />
+
+            <text id="shape-label" x="300" y="350" text-anchor="middle" font-size="18" fill="#555">Select a shape above</text>
+        </svg>
+
+        <div class="controls">
+            <button class="action-btn" onclick="animateHeight()">
+                <i class="fas fa-ruler-vertical"></i> Show Height (90°)
+            </button>
+        </div>
     </div>
 
     <div id="tab-5.1" class="content-area active">
